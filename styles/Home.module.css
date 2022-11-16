@@ -1,0 +1,46 @@
+.dropzone {
+  border: 2px dashed #ddd;
+  border-radius: 5px;
+  background-color: #f7f7f7;
+  padding: 50px;
+  text-align: center;
+}
+
+.results {
+  max-width: 100%;
+}
+
+.results-pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  line-height: 1.15;
+  font-size: 4rem;
+}
+
+.title,
+.description {
+  text-align: center;
+}
+
+.description {
+  line-height: 1.5;
+  font-size: 1.5rem;
+}

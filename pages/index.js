@@ -1,209 +1,218 @@
 import Head from 'next/head'
+import { React, useState, useRef, useEffect, useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
+import styles from '../styles/Home.module.css'
 
-export default function Home() {
-  return (
-    <div className="container">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+function search() {
+    // set worker
+    const workerRef = useRef(null);
+    // file counter
+    const [fileCount, setFileCount] = useState(0);
+    // search enabled state
+    const [searchEnabled, setSearchEnabled] = useState(false);
+    // search input state
+    const [search, setSearch] = useState("");
+    // search results state
+    const [results, setResults] = useState([]);
+    // loading
+    const [loading, setLoading] = useState(false);
 
-      <main>
-        <h1 className="title">
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+    const pdfgrep = () => {
+        if (!loading && searchEnabled && search.length > 0) {
+            setResults([]);
+            setLoading(true);
+            workerRef.current.postMessage({ query: search });
+        }
+    }
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
+    // Set localStorage item when the component mounts and add storage event listener
+    useEffect(() => {
+        if (workerRef.current == null) {
+            // set worker
+            workerRef.current = new Worker('/dist/pdfgrep_worker.js');
+            workerRef.current.onmessage = ({ data: { searchResult, fileCount, exception, print }}) => {
+                if (searchResult) {
+                    setLoading(false);
+                    if (searchResult.exit_code !== 0 && searchResult.stderr.length > 0) {
+                        const stderr = searchResult.stderr.trim().split('\n').filter(l => !l.startsWith("program exited"));
+                        if (stderr.length > 0) {
+                            setResults(results => [...results, searchResult.stderr]);
+                        }
+                    }
+                } else if (fileCount !== undefined) {
+                    console.log("fileCount", fileCount);
+                    setFileCount(fileCount);
+                } else if (exception) {
+                    console.error(exception);
+                } else if (print) {
+                    // add line to results
+                    setResults(results => [...results, print]);
+                } else {
+                    console.error("Unknown message", searchResult, fileCount, exception, print);
+                }
+            };
+            workerRef.current.postMessage({ pdfgrep_wasm: "/dist/pdfgrep.wasm", pdfgrep_js: "/dist/pdfgrep.js" });
+        }
+    }, []);
 
-        <div className="grid">
-          <a href="https://nextjs.org/docs" className="card">
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+    useEffect(() => {
+        if (fileCount > 0 && !loading) {
+            setSearchEnabled(true);
+        } else {
+            setSearchEnabled(false);
+        }
+    }, [fileCount, loading]);
 
-          <a href="https://nextjs.org/learn" className="card">
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+    function Dropzone() {
+        const onDrop = useCallback(acceptedFiles => {
+            // Filter out non-pdf files
+            const pdfs = acceptedFiles.filter(f => f.type === "application/pdf");
+            console.log("pdfs", pdfs);
+            // Upload the files
+            workerRef.current.postMessage({ files: pdfs });
+        }
+        , [])
+        const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+        return (
+            <div {...getRootProps()} className={styles.dropzone}>
+                <input {...getInputProps()} />
+                {
+                isDragActive ?
+                    <p>Drop the files here ...</p> :
+                    <p>Drag 'n' drop some files here, or click to select files</p>
+                }
+            </div>
+        )
+    }
+    
+    return (
+        <div className={styles.container}>
+            <Head>
+                <title>pdfgrep</title>
+                <meta name="description" content="pdf search powered by pdfgrep compiled to webassembly" />
+                <link rel="icon" href="/favicon.ico" />
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="card"
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+                {/* Preload scripts */}
+                <link rel="pdfgrep" type="text/javascript" id="pdfgrep_worker_js" href="/dist/pdfgrep_worker.js" /> 
+                <link rel="pdfgrep" type="text/javascript" id="pdfgrep_pipeline_js" href="/dist/pdfgrep_pipeline.js" />
+                <link rel="pdfgrep" type="text/javascript" id="pdfgrep_js" href="/dist/pdfgrep.js" />
+                <link rel="pdfgrep" type="application/wasm" id="pdfgrep_wasm" href="/dist/pdfgrep.wasm" />
+            </Head>
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="card"
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+            <main>
+                <h1 className={styles.title}>
+                pdfgrep
+                </h1>
+
+                <p className={styles['description']}>
+                <a href='https://pdfgrep.org'>pdfgrep</a> compiled to webassembly. upload documents to search
+                </p>
+
+                <Dropzone />
+
+                {/* info box */}
+                <div className={styles.info}>
+                    <p>
+                        Uploaded {fileCount} files.
+                        {loading ? " Searching..." : ""}
+                    </p>
+                </div>
+
+                {/* search form */}
+                <form className={styles.header}>
+                    <input 
+                        type="text" 
+                        placeholder="Search" 
+                        onChange={(e) => setSearch(e.target.value)}
+                        onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            pdfgrep();
+                        }}
+                    } />
+                    <button type="button" disabled={!searchEnabled} onClick={pdfgrep}>Search</button>
+                </form>
+
+                {/* results */}
+                <div className={styles['results']}>
+                    {/* monospace */}
+                    <pre className={styles['results-pre']}>
+                    {results.map((result, index) => (
+                        <div key={index} className={styles['result']}>
+                            {result}
+                        </div>
+                    ))}
+                    </pre>
+                </div>
+            </main>
+
+            <footer>
+            Robert Washbourne 2022
+            </footer>
+
+            <style jsx global>{`
+                html,
+                body {
+                    padding: 0;
+                    margin: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+                        Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
+                        sans-serif;
+                }
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                a {
+                    color: inherit;
+                    text-decoration: none;
+                }
+
+                a:hover {
+                    text-decoration: underline;
+                }
+
+                code {
+                    background: #fafafa;
+                    border-radius: 5px;
+                    padding: 0.75rem;
+                    font-size: 1.1rem;
+                    font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
+                        DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
+                }
+
+                main {
+                    width: 100%;
+                    padding: 5rem 1rem;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: left;
+                }
+
+                footer {
+                    width: 100%;
+                    height: 100px;
+                    border-top: 1px solid #eaeaea;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                
+                footer img {
+                    margin-left: 0.5rem;
+                }
+                
+                footer a {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+            `}</style>
         </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className="logo" />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        footer img {
-          margin-left: 0.5rem;
-        }
-
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
-
-        .title a {
-          color: #0070f3;
-          text-decoration: none;
-        }
-
-        .title a:hover,
-        .title a:focus,
-        .title a:active {
-          text-decoration: underline;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 4rem;
-        }
-
-        .title,
-        .description {
-          text-align: center;
-        }
-
-        .description {
-          line-height: 1.5;
-          font-size: 1.5rem;
-        }
-
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .grid {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-
-          max-width: 800px;
-          margin-top: 3rem;
-        }
-
-        .card {
-          margin: 1rem;
-          flex-basis: 45%;
-          padding: 1.5rem;
-          text-align: left;
-          color: inherit;
-          text-decoration: none;
-          border: 1px solid #eaeaea;
-          border-radius: 10px;
-          transition: color 0.15s ease, border-color 0.15s ease;
-        }
-
-        .card:hover,
-        .card:focus,
-        .card:active {
-          color: #0070f3;
-          border-color: #0070f3;
-        }
-
-        .card h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.5rem;
-        }
-
-        .card p {
-          margin: 0;
-          font-size: 1.25rem;
-          line-height: 1.5;
-        }
-
-        .logo {
-          height: 1em;
-        }
-
-        @media (max-width: 600px) {
-          .grid {
-            width: 100%;
-            flex-direction: column;
-          }
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
-    </div>
-  )
+    )
 }
+
+export default search
