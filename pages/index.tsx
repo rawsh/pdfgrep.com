@@ -2,16 +2,20 @@ import Head from 'next/head'
 import * as React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { ChevronsLeft, ChevronsUp } from 'react-feather'
+import { ChevronsDown, ChevronsLeft, ChevronsUp, Repeat } from 'react-feather'
 import styles from '../styles/Home.module.css'
 
-import { NavigationHandle } from '../components/PDFViewer'
-import PDFViewer from '../components/PDFViewer'
-import { PageNavigationPlugin } from '@react-pdf-viewer/page-navigation'
+import { PDFViewer, NavigationHandle } from '../components/PDFViewer'
 
 // sty;es 
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/page-navigation/lib/styles/index.css';
+
+type FileWithPageData = {
+    fileName: string;
+    fileData: Uint8Array;
+    currentPage: number;
+};
 
 function search() {
     // set worker
@@ -20,8 +24,7 @@ function search() {
 
     // search enabled state
     const [expanded, setExpanded] = useState(false);
-    const [fileCount, setFileCount] = useState(0);
-
+    
     // header state
     const [headerHidden, setHeaderHidden] = useState(false);
     
@@ -30,10 +33,21 @@ function search() {
     const [searchEnabled, setSearchEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<string[]>([]);
-    const [currentFileName, setCurrentFileName] = useState("");
-    const [currentPdf, setCurrentPdf] = useState<Uint8Array | null>(null);
+    
+    // pdf viewer state
+    const [showPdf, setShowPdf] = useState(false);
+    const [fileCount, setFileCount] = useState(0);
     const [fileNameToData, setFileNameToData] = useState<{[key: string]: Uint8Array}>({});
-    const [page, setPage] = useState(0);
+
+    const [currentPdf, setCurrentPdf] = useState<FileWithPageData>({
+        fileName: "", 
+        fileData: new Uint8Array(), 
+        currentPage: 0
+    });
+
+    // const [currentFileName, setCurrentFileName] = useState("");
+    // const [currentPdf, setCurrentPdf] = useState<Uint8Array | null>(null);
+    // const [page, setPage] = useState(0);
 
     const toggleHeader = () => {
         setHeaderHidden(!headerHidden);
@@ -47,16 +61,25 @@ function search() {
         }
     }
 
+    // when navigationHandle is set, jump to page
+    useEffect(() => {
+        if (navigationRef.current) {
+            navigationRef.current.jumpToPage(currentPdf.currentPage);
+        }
+    }, [navigationRef.current]);
+
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
         // if screen width is larger than 1400, expand pdf viewer
         if (window.innerWidth > 1400) {
+            setShowPdf(true);
             setExpanded(true);
         } 
 
         // add event listener for screen resize
         window.addEventListener('resize', () => {
             if (window.innerWidth > 1400) {
+                setShowPdf(true);
                 setExpanded(true);
             } else {
                 setExpanded(false);
@@ -76,13 +99,16 @@ function search() {
                         }
                     }
                 } else if (singleFileData) {
-                    console.log(singleFileData);
                     setCurrentPdf(singleFileData);
                 } else if (fileData) {
                     setFileCount(fileData.fileCount);
                     setFileNameToData(fileData.fileNameToData);
-                    setCurrentFileName(Object.keys(fileData.fileNameToData)[0]);
-                    setCurrentPdf(fileData.fileNameToData[Object.keys(fileData.fileNameToData)[0]]);
+                    const fileNames = Object.keys(fileData.fileNameToData);
+                    setCurrentPdf({
+                        fileName: fileNames[0],
+                        fileData: fileData.fileNameToData[fileNames[0]],
+                        currentPage: 0
+                    });
                 } else if (exception) {
                     console.error(exception);
                 } else if (print) {
@@ -92,11 +118,22 @@ function search() {
                             // first result, open pdf
                             const [fileName, line, ...rest] = print.split(':');
                             if (fileName !== undefined && line !== undefined) {
-                                if (fileName === currentFileName) {
-                                    navigationRef.current?.jumpToPage(parseInt(line)-1);
+                                if (fileName === currentPdf.fileName) {
+                                    console.log("same file, set page");
+                                    setCurrentPdf(currentPdf => {
+                                        return {
+                                            ...currentPdf,
+                                            currentPage: parseInt(line)-1
+                                        }
+                                    });
+                                } else {
+                                    workerRef.current?.postMessage({
+                                        getFileData: {
+                                            fileName: fileName,
+                                            currentPage: parseInt(line)-1
+                                        }
+                                    });
                                 }
-                                setPage(parseInt(line));
-                                workerRef.current?.postMessage({ getFileData: fileName });
                             }
                         }
                         return [...results, print];
@@ -111,12 +148,12 @@ function search() {
 
     // disable the search if loading
     useEffect(() => {
-        if (!loading) {
+        if (!loading && search !== "") {
             setSearchEnabled(true);
         } else {
             setSearchEnabled(false);
         }
-    }, [loading]);
+    }, [loading, search]);
 
     function Dropzone() {
         const onDrop = useCallback(acceptedFiles => {
@@ -157,21 +194,25 @@ function search() {
             <link rel="pdfgrep" type="application/wasm" id="pdfgrep_wasm" href="/dist/pdfgrep.wasm" />
         </Head>
         
-        <div className={styles.container}>
+        <div className={expanded ? styles.containerExpanded : styles.container}>
             <main className={expanded ? styles.mainExpanded : styles.main}>
-            <h1 className={styles.title}>
-            pdfgrep
-            </h1>
             <header className={expanded ? styles.headerExpanded : [styles.header, styles.sticky].join(" ")}>
-                <p className={styles.description}> 
-                {fileCount === 0 ? <><a href='https://pdfgrep.org'>pdfgrep</a> compiled to webassembly. upload files to search.</> : <> uploaded {fileCount} {fileCount === 1 ? "file" : "files"}{loading ? <>. searching...</> : ""}</>}
-                </p>
+                <div className={headerHidden || (showPdf && !expanded) ? styles.headerContentHidden : styles.headerContent}>
+                    <h1 className={styles.title}>
+                    pdfgrep
+                    </h1>
+                    <p className={styles.description}> 
+                    {fileCount === 0 ? <><a href='https://pdfgrep.org'>pdfgrep</a> compiled to webassembly. upload files to search.</> : <> uploaded {fileCount} {fileCount === 1 ? "file" : "files"}{loading ? <>. searching...</> : ""}</>}
+                    </p>
 
-                <Dropzone />
+                    <Dropzone />
+                </div>
 
                 {/* search form */}
                 <form className={styles.search + " " + (expanded ? styles.expanded : "")}>
-                    <div className={[styles.controlButton, styles.collapseHeaderButton].join(" ")} onClick={toggleHeader}><ChevronsUp size="36"/></div>
+                    <div className={[styles.controlButton, styles.collapseHeaderButton].join(" ")} onClick={toggleHeader}>
+                        {headerHidden ? <ChevronsDown size="36"/> : <ChevronsUp size="36"/>}
+                    </div>
                     <div className={styles.searchContainer}>
                         <input
                             className={styles.searchInput}
@@ -197,16 +238,28 @@ function search() {
                 {results.map((result, index) => {
                     // parse result to get filename and slide number
                     // result format: "filename.pdf:1: some text"
-                    const [filename, slide, ...text] = result.split(":");
+                    const [filename, page, ...rest] = result.split(":");
 
                     return(
-                        <div key={index} className={styles.result} onClick={() => {
-                            if (filename === currentFileName) {
-                                navigationRef.current?.jumpToPage(page-1);
+                        <div key={index} className={styles.result} onClick={async () => {
+                            if (!showPdf) {
+                                setShowPdf(true);
                             }
-                            setPage(parseInt(slide));
-                            setCurrentFileName(filename);
-                            setCurrentPdf(fileNameToData[filename]);
+                            if (filename === currentPdf.fileName) {
+                                navigationRef.current?.jumpToPage(parseInt(page)-1);
+                                setCurrentPdf(currentPdf => {
+                                    return {
+                                        ...currentPdf,
+                                        currentPage: parseInt(page)-1
+                                    }
+                                });
+                            } else {
+                                setCurrentPdf({
+                                    fileName: filename,
+                                    fileData: fileNameToData[filename],
+                                    currentPage: parseInt(page)-1
+                                });
+                            }
                         }}>
                             {result}
                         </div>
@@ -215,14 +268,20 @@ function search() {
                 </pre>
             </div>
 
-            {expanded && currentPdf !== null ?
-                <div className={[styles.controlButton, styles.minimizeButton].join(" ")} onClick={() => setExpanded(false)}><ChevronsLeft size="36"/></div>
-            : ""}
+            <div className={[styles.controlButton, styles.minimizeButton].join(" ")} onClick={() => {
+                if(expanded) { 
+                    setExpanded(false); 
+                    if (currentPdf.fileName === "") {
+                        setShowPdf(false);
+                    }
+                } else {
+                    setShowPdf(!showPdf);
+                }
+            }}>
+                {expanded ? <ChevronsLeft size="36"/> : <Repeat size="36"/>}
+            </div>
             </main>
-
-            {expanded && currentPdf !== null ?
-                <PDFViewer initialPage={page - 1} pdfData={currentPdf} ref={navigationRef} /> 
-            : ""}
+            <PDFViewer initialPage={currentPdf.currentPage} ref={navigationRef} pdfData={currentPdf.fileData} showPdf={(expanded && showPdf) || (!expanded && !headerHidden && showPdf)} expanded={expanded} />
         </div>
 
         {/* <footer className={styles.footer} style={{display: expanded ? "none" : "flex"}}>

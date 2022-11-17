@@ -12,8 +12,14 @@ onmessage = async ({ data: { getFileData, files, query, pdfgrep_wasm, pdfgrep_js
     }
     else if (getFileData && self.pipeline) {
         try {
-            const fileData = await self.pipeline.getFile(getFileData);
-            postMessage({ singleFileData: fileData }); 
+            const fileData = await self.pipeline.getFile(getFileData.fileName);
+            postMessage({
+                singleFileData: {
+                    fileName: getFileData.fileName,
+                    fileData: fileData,
+                    currentPage: getFileData.currentPage
+                }
+            });
         } catch (err) {
             postMessage({exception: 'Exception during getFile: ' + err.toString() + '\nStack:\n' + err.stack});
         }

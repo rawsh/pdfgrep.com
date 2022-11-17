@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef, useImperativeHandle } from 'react';
+import { useImperativeHandle } from 'react';
 import * as React from 'react';
 import styles from '../../styles/Home.module.css'
-import { ChevronsLeft } from 'react-feather';
 
 // Import the main component
 import { Worker, Viewer } from '@react-pdf-viewer/core';
@@ -11,21 +10,29 @@ export type NavigationHandle = {
     jumpToPage: (page: number) => void;
 };
 
-function PDFViewer(props, navigationRef) {
+type PDFViewerProps = {
+    showPdf: boolean;
+    expanded: boolean;
+    initialPage: number;
+    pdfData: Uint8Array;
+};
+
+export const PDFViewer = React.forwardRef<NavigationHandle, PDFViewerProps>((props, ref) => {
     const jumpToPagePluginInstance = pageNavigationPlugin();
     const { jumpToPage } = jumpToPagePluginInstance;
 
-    useImperativeHandle(navigationRef, () => ({
+    useImperativeHandle(ref, () => ({
         jumpToPage: (page: number) => jumpToPage(page),
     }));
 
+    const containerStyle = [styles.pdfViewer, styles.sidePanel].join(" ") + (props.showPdf ? "" : " " + styles.pdfHidden) + (props.expanded ? " " + styles.pdfViewerExpanded : "");
     return (
-        <div className={[styles.pdfViewer, styles.sidePanel].join(" ")}>
+        <div className={containerStyle}>
             <Worker workerUrl="/pdf.worker.min.js">
-                <Viewer initialPage={props.initialPage} fileUrl={props.pdfData} plugins={[jumpToPagePluginInstance]}/>
+                {props.pdfData.length > 0 ? (
+                    <Viewer initialPage={props.initialPage} fileUrl={props.pdfData} plugins={[jumpToPagePluginInstance]}/>
+                ): ""}
             </Worker>
         </div>
     )
-}
-
-export default React.forwardRef(PDFViewer);
+});
