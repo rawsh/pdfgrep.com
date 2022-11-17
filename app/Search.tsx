@@ -63,11 +63,11 @@ export default function Search() {
     }
 
     // when navigationHandle is set, jump to page
-    useEffect(() => {
-        if (navigationRef.current) {
-            navigationRef.current.jumpToPage(currentPdf.currentPage);
-        }
-    }, [navigationRef.current]);
+    // useEffect(() => {
+    //     if (navigationRef.current) {
+    //         navigationRef.current.jumpToPage(currentPdf.currentPage);
+    //     }
+    // }, [navigationRef.current]);
 
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
@@ -114,31 +114,32 @@ export default function Search() {
                     console.error(exception);
                 } else if (print) {
                     // add line to results
-                    setResults(results => {
-                        if (results.length === 0) {
-                            // first result, open pdf
-                            const [fileName, line, ...rest] = print.split(':');
-                            if (fileName !== undefined && line !== undefined) {
-                                if (fileName === currentPdf.fileName) {
-                                    console.log("same file, set page");
-                                    setCurrentPdf(currentPdf => {
-                                        return {
-                                            ...currentPdf,
-                                            currentPage: parseInt(line)-1
-                                        }
-                                    });
-                                } else {
-                                    workerRef.current?.postMessage({
-                                        getFileData: {
-                                            fileName: fileName,
-                                            currentPage: parseInt(line)-1
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                        return [...results, print];
-                    });
+                    setResults(results => [...results, print]);
+                    // setResults(results => {
+                    //     if (results.length === 0) {
+                    //         // first result, open pdf
+                    //         const [fileName, line, ...rest] = print.split(':');
+                    //         if (fileName !== undefined && line !== undefined) {
+                    //             if (fileName === currentPdf.fileName) {
+                    //                 console.log("same file, set page");
+                    //                 setCurrentPdf(currentPdf => {
+                    //                     return {
+                    //                         ...currentPdf,
+                    //                         currentPage: parseInt(line)-1
+                    //                     }
+                    //                 });
+                    //             } else {
+                    //                 workerRef.current?.postMessage({
+                    //                     getFileData: {
+                    //                         fileName: fileName,
+                    //                         currentPage: parseInt(line)-1
+                    //                     }
+                    //                 });
+                    //             }
+                    //         }
+                    //     }
+                    //     return [...results, print];
+                    // });
                 } else {
                     console.error("Unknown message", searchResult, fileData, exception, print);
                 }
