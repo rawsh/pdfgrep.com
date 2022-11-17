@@ -1,0 +1,71 @@
+import { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+// import { Document, Page } from 'react-pdf/dist/esm/entry.webpack5';
+import styles from '../../styles/Home.module.css'
+import { ChevronsLeft } from 'react-feather';
+
+function PDFViewer(props, pageRefs) {
+    // pdf viewer state
+    const pdfViewer = useRef<HTMLDivElement>(null);
+
+    const [numPages, setNumPages] = useState(null);
+    const [pageNumber, setPageNumber] = useState(1);
+    const [containerWidth, setContainerWidth] = useState<number | undefined>(undefined);
+    const [windowResizing, setWindowResizing] = useState(false);
+
+    useEffect(() => {
+        setContainerWidth(pdfViewer.current?.getBoundingClientRect().width);
+
+        let timeout;
+        const handleResize = () => {
+        clearTimeout(timeout);
+        setWindowResizing(true);
+
+        timeout = setTimeout(() => {
+            setWindowResizing(false);
+        }, 200);
+        }
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    useEffect(() => {
+        if (pdfViewer.current && !windowResizing) {
+            setContainerWidth(pdfViewer.current?.getBoundingClientRect().width);
+        }
+    }, [windowResizing]);
+
+    function onDocumentLoadSuccess({ numPages }) {
+        setNumPages(numPages);
+    }
+
+    return (
+        <div className={[styles.pdfViewer, styles.sidePanel].join(" ")} ref={pdfViewer}>
+            <div className={styles.pdfViewerHeader}>
+                <div className={styles.controlButton} onClick={() => props.setExpanded(false)}><ChevronsLeft size="36"/></div>
+                <div className={styles.pdfViewerPageNum}>Page {pageNumber} of {numPages}</div>
+            </div>
+            <Document 
+                file="/dist/test.pdf" 
+                onLoadSuccess={onDocumentLoadSuccess}
+                options={{
+                    cMapUrl: 'cmaps/',
+                    cMapPacked: true,
+                }}>
+                {Array(...Array(numPages))
+                    .map((x, i) => i + 1)
+                    .map(pageNumber => (
+                    <div key={pageNumber} ref={el => { pageRefs.current[pageNumber] = el; }}>
+                        <Page
+                            width={containerWidth}
+                            pageNumber={pageNumber}
+                            loading=""
+                        />
+                    </div>
+                ))}
+            </Document>
+        </div>
+    )
+}
+
+export default React.forwardRef(PDFViewer);

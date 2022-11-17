@@ -9,6 +9,7 @@ class PDFPipeline
     }
 
     constructor(pdfgrep_wasm, pdfgrep_js, print, on_initialized, script_loader) {
+        this.files = {};
         this.print = print;
         this.script_loader = script_loader;
         this.mem_header_size = 2 ** 26;
@@ -24,6 +25,10 @@ class PDFPipeline
         this.Module = null;
     }
 
+    async getFile(file_name) {
+        return this.files[file_name];
+    }
+
     async upload(files) {
         const Module = await this.Module;
         if (!Module) {
@@ -36,10 +41,16 @@ class PDFPipeline
             await new Promise(resolve => file_reader.onloadend = resolve);
             const file_name = file.name;
             const file_path = "/tmp/" + file_name;
-            await Module.FS.writeFile(file_path, new Uint8Array(file_reader.result));
+            const file_data = new Uint8Array(file_reader.result);
+            // store file data in memory
+            this.files[file_name] = file_data;
+            await Module.FS.writeFile(file_path, file_data);
         }
 
-        return this.getFileCount();
+        return {
+            fileCount: await this.getFileCount(),
+            fileNameToData: this.files
+        }
     }
 
     async getFileCount() {
@@ -48,7 +59,6 @@ class PDFPipeline
             throw new Error("Module not initialized");
         }
         const files = await Module.FS.readdir('/tmp').filter(f => f != "." && f != "..");
-        console.log(files);
 
         // return file count
         return await files.length;
