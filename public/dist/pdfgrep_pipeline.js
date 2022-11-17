@@ -64,7 +64,6 @@ class PDFPipeline
         return await files.length;
     }
 
-
     async search(query) {
         const Module = await this.Module;
         if (!Module) {

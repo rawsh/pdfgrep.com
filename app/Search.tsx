@@ -4,7 +4,6 @@ import * as React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { ChevronsDown, ChevronsLeft, ChevronsUp, Repeat } from 'react-feather'
-
 import { PDFViewer, NavigationHandle } from './PDFViewer'
 
 // sty;es 
@@ -44,10 +43,6 @@ export default function Search() {
         currentPage: 0
     });
 
-    // const [currentFileName, setCurrentFileName] = useState("");
-    // const [currentPdf, setCurrentPdf] = useState<Uint8Array | null>(null);
-    // const [page, setPage] = useState(0);
-
     const toggleHeader = () => {
         setHeaderHidden(!headerHidden);
     }
@@ -59,13 +54,6 @@ export default function Search() {
             workerRef.current.postMessage({ query: search });
         }
     }
-
-    // when navigationHandle is set, jump to page
-    // useEffect(() => {
-    //     if (navigationRef.current) {
-    //         navigationRef.current.jumpToPage(currentPdf.currentPage);
-    //     }
-    // }, [navigationRef.current]);
 
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
@@ -113,31 +101,6 @@ export default function Search() {
                 } else if (print) {
                     // add line to results
                     setResults(results => [...results, print]);
-                    // setResults(results => {
-                    //     if (results.length === 0) {
-                    //         // first result, open pdf
-                    //         const [fileName, line, ...rest] = print.split(':');
-                    //         if (fileName !== undefined && line !== undefined) {
-                    //             if (fileName === currentPdf.fileName) {
-                    //                 console.log("same file, set page");
-                    //                 setCurrentPdf(currentPdf => {
-                    //                     return {
-                    //                         ...currentPdf,
-                    //                         currentPage: parseInt(line)-1
-                    //                     }
-                    //                 });
-                    //             } else {
-                    //                 workerRef.current?.postMessage({
-                    //                     getFileData: {
-                    //                         fileName: fileName,
-                    //                         currentPage: parseInt(line)-1
-                    //                     }
-                    //                 });
-                    //             }
-                    //         }
-                    //     }
-                    //     return [...results, print];
-                    // });
                 } else {
                     console.error("Unknown message", searchResult, fileData, exception, print);
                 }
@@ -165,8 +128,7 @@ export default function Search() {
             } else {
                 console.error("workerRef.current is null");
             }
-        }
-        , [])
+        }, []);
         const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
         return (
             <div {...getRootProps()} className={styles.dropzone}>
