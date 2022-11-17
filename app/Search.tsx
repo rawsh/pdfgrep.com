@@ -1,13 +1,14 @@
-import Head from 'next/head'
+'use client';
+
 import * as React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { ChevronsDown, ChevronsLeft, ChevronsUp, Repeat } from 'react-feather'
-import styles from '../styles/Home.module.css'
 
-import { PDFViewer, NavigationHandle } from '../components/PDFViewer'
+import { PDFViewer, NavigationHandle } from './PDFViewer'
 
 // sty;es 
+import styles from '../styles/Home.module.css'
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/page-navigation/lib/styles/index.css';
 
@@ -17,7 +18,7 @@ type FileWithPageData = {
     currentPage: number;
 };
 
-function search() {
+export default function Search() {
     // set worker
     const workerRef = useRef<Worker | null>(null);
     const navigationRef = useRef<NavigationHandle>(null);
@@ -93,7 +94,7 @@ function search() {
                 if (searchResult) {
                     setLoading(false);
                     if (searchResult.exit_code !== 0 && searchResult.stderr.length > 0) {
-                        const stderr = searchResult.stderr.trim().split('\n').filter(l => !l.startsWith("program exited"));
+                        const stderr = searchResult.stderr.trim().split('\n').filter((l: string) => !l.startsWith("program exited"));
                         if (stderr.length > 0) {
                             setResults(results => [...results, searchResult.stderr]);
                         }
@@ -156,7 +157,7 @@ function search() {
     }, [loading, search]);
 
     function Dropzone() {
-        const onDrop = useCallback(acceptedFiles => {
+        const onDrop = useCallback((acceptedFiles: File[]) => {
             if (workerRef.current) {
                 // Filter out non-pdf files
                 const pdfs = acceptedFiles.filter(f => f.type === "application/pdf");
@@ -181,19 +182,7 @@ function search() {
     }
     
     return (
-    <>
-        <Head>
-            <title>pdfgrep</title>
-            <meta name="description" content="pdf search powered by pdfgrep compiled to webassembly" />
-            <link rel="icon" href="/favicon.ico" />
-
-            {/* Preload scripts */}
-            <link rel="pdfgrep" type="text/javascript" id="pdfgrep_worker_js" href="/dist/pdfgrep_worker.js" /> 
-            <link rel="pdfgrep" type="text/javascript" id="pdfgrep_pipeline_js" href="/dist/pdfgrep_pipeline.js" />
-            <link rel="pdfgrep" type="text/javascript" id="pdfgrep_js" href="/dist/pdfgrep.js" />
-            <link rel="pdfgrep" type="application/wasm" id="pdfgrep_wasm" href="/dist/pdfgrep.wasm" />
-        </Head>
-        
+    <>        
         <div className={expanded ? styles.containerExpanded : styles.container}>
             <main className={expanded ? styles.mainExpanded : styles.main}>
             <header className={expanded ? styles.headerExpanded : [styles.header, styles.sticky].join(" ")}>
@@ -315,5 +304,3 @@ function search() {
     </>
     )
 }
-
-export default search

@@ -2,11 +2,13 @@
 
 import { useImperativeHandle } from 'react';
 import * as React from 'react';
-import styles from '../../styles/Home.module.css'
 
 // Import the main component
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
+
+// Import the styles
+import styles from '../styles/Home.module.css';
 
 export type NavigationHandle = {
     jumpToPage: (page: number) => void;
