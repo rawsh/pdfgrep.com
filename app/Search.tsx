@@ -237,31 +237,6 @@ export default function Search() {
         {/* <footer className={styles.footer} style={{display: expanded ? "none" : "flex"}}>
         <a href='mailto:robert@devpy.me'>robert@devpy.me</a>
         </footer> */}
-
-        <style jsx global>{`
-            html,
-            body {
-                height: 100%;
-                padding: 0;
-                margin: 0;
-                font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-                    Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-                    sans-serif;
-            }
-
-            * {
-                box-sizing: border-box;
-            }
-
-            a {
-                color: inherit;
-                text-decoration: none;
-            }
-
-            a:hover {
-                text-decoration: underline;
-            }
-        `}</style>
     </>
     )
 }
