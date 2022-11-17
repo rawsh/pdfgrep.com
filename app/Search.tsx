@@ -9,8 +9,6 @@ import { PDFViewer, NavigationHandle } from './PDFViewer'
 
 // sty;es 
 import styles from '../styles/Home.module.css'
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/page-navigation/lib/styles/index.css';
 
 type FileWithPageData = {
     fileName: string;

@@ -84,18 +84,19 @@ class PDFPipeline
             thisProgram: 'pdfgrep',
             preRun: [() => Module.FS.chdir('/tmp')],
             postRun: [],
-            instantiateWasm(imports, successCallback)
+            output_stdout : '',
+            instantiateWasm: (imports, successCallback) =>
             {
                 WebAssembly.instantiate(wasm_module, imports).then(output => successCallback(WebAssembly.compileStreaming ? output : output.instance)).catch(err => {throw new Error('Error while initializing pdfgrep!\n\n' + err.toString())});
                 return {};
             },
-            output_stdout : '',
-            print(text) {
+
+            print: (text) => {
                 Module.output_stdout += text + '\n';
                 this.print(text);
             },
             output_stderr : '',
-            printErr(text) {
+            printErr: (text) => {
                 Module.output_stderr += text + '\n';
                 // this.print(text);
             },
