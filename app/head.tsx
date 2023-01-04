@@ -4,6 +4,7 @@ export default function Head() {
             <title>pdfgrep</title>
             <meta name="description" content="pdf search powered by pdfgrep compiled to webassembly" />
             <link rel="icon" href="/favicon.ico" />
+            <meta name="viewport" content="width=device-width" />
 
             {/* Preload scripts */}
             <link rel="pdfgrep" type="text/javascript" id="pdfgrep_worker_js" href="/dist/pdfgrep_worker.js" /> 
