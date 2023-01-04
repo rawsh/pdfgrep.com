@@ -6,10 +6,13 @@ import { useDropzone } from 'react-dropzone'
 import { ChevronsDown, ChevronsLeft, ChevronsUp, Repeat } from 'react-feather'
 import { PDFViewer, NavigationHandle } from './PDFViewer'
 
-// sty;es 
+// styles 
 import styles from '../styles/Home.module.css'
 
+// listen for a keypress arrow right
+
 type FileWithPageData = {
+    resultIndex: number;
     fileName: string;
     fileData: Uint8Array;
     currentPage: number;
@@ -38,6 +41,7 @@ export default function Search() {
     const [fileNameToData, setFileNameToData] = useState<{[key: string]: Uint8Array}>({});
 
     const [currentPdf, setCurrentPdf] = useState<FileWithPageData>({
+        resultIndex: -1,
         fileName: "", 
         fileData: new Uint8Array(), 
         currentPage: 0
@@ -57,8 +61,35 @@ export default function Search() {
 
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
-        // if screen width is larger than 1400, expand pdf viewer
-        if (window.innerWidth > 1400) {
+
+        // go to next result
+        const nextResult = () => {
+            if (currentPdf.resultIndex < results.length - 1) {
+                const [filename, page, ...rest] = results[currentPdf.resultIndex + 1].split(":");
+                const fileData = fileNameToData[filename];
+                setCurrentPdf({
+                    resultIndex: currentPdf.resultIndex + 1,
+                    fileName: filename,
+                    fileData: fileData,
+                    currentPage: parseInt(page)
+                });
+                setShowPdf(true);
+            }
+        }
+
+        const spacebarListener = (e: KeyboardEvent) => {
+            if (e.key === " ") {
+                console.log(e.key)
+                e.preventDefault();
+                nextResult();
+            }
+        }
+
+        // attach event listener
+        window.addEventListener("keydown", spacebarListener);
+
+        // if screen width is larger than 1200, expand pdf viewer
+        if (window.innerWidth > 1200) {
             setShowPdf(true);
             setExpanded(true);
         } 
@@ -92,6 +123,7 @@ export default function Search() {
                     setFileNameToData(fileData.fileNameToData);
                     const fileNames = Object.keys(fileData.fileNameToData);
                     setCurrentPdf({
+                        resultIndex: -1,
                         fileName: fileNames[0],
                         fileData: fileData.fileNameToData[fileNames[0]],
                         currentPage: 0
@@ -107,6 +139,12 @@ export default function Search() {
             };
             workerRef.current.postMessage({ pdfgrep_wasm: "/dist/pdfgrep.wasm", pdfgrep_js: "/dist/pdfgrep.js" });
         }
+
+        return () => {
+            // remove event listener
+            window.removeEventListener("keydown", spacebarListener);
+        }
+
     }, []);
 
     // disable the search if loading
@@ -191,7 +229,7 @@ export default function Search() {
                     const [filename, page, ...rest] = result.split(":");
 
                     return(
-                        <div key={index} className={styles.result} onClick={async () => {
+                        <div key={index} className={currentPdf.resultIndex === index ? [styles.result, styles.selected].join(" ") : styles.result} onClick={async () => {
                             if (!showPdf) {
                                 setShowPdf(true);
                             }
@@ -200,11 +238,13 @@ export default function Search() {
                                 setCurrentPdf(currentPdf => {
                                     return {
                                         ...currentPdf,
+                                        resultIndex: index,
                                         currentPage: parseInt(page)-1
                                     }
                                 });
-                            } else {
+                            } else if (fileNameToData[filename]) {
                                 setCurrentPdf({
+                                    resultIndex: index,
                                     fileName: filename,
                                     fileData: fileNameToData[filename],
                                     currentPage: parseInt(page)-1

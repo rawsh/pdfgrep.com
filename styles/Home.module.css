@@ -113,6 +113,9 @@
 
 .result:hover {
   cursor: pointer;
+  background-color: #eee;
+}
+.result.selected {
   background-color: #ddd;
 }
 .results {
