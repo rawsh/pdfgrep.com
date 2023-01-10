@@ -34,7 +34,7 @@ export const PDFViewer = React.forwardRef<NavigationHandle, PDFViewerProps>((pro
     const containerStyle = [styles.pdfViewer, styles.sidePanel].join(" ") + (props.showPdf ? "" : " " + styles.pdfHidden) + (props.expanded ? " " + styles.pdfViewerExpanded : "");
     return (
         <div className={containerStyle}>
-            <Worker workerUrl="/pdf.worker.min.js">
+            <Worker workerUrl="/dist/pdf.worker.js">
                 {props.pdfData.length > 0 ? (
                     <Viewer initialPage={props.initialPage} fileUrl={props.pdfData} plugins={[jumpToPagePluginInstance]}/>
                 ): ""}

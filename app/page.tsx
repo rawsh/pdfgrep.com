@@ -1,11 +1,11 @@
 import Search from './Search';
-import Script from 'next/script';
+// import Script from 'next/script';
 
 export default async function Page() {
     return (
         <>
             <Search />
-            <Script
+            {/* <Script
                 src="https://www.googletagmanager.com/gtag/js?id=G-D3BN2DRLFZ"
                 strategy="afterInteractive"
             />
@@ -17,7 +17,7 @@ export default async function Page() {
 
                 gtag('config', 'G-D3BN2DRLFZ');
                 `}
-            </Script>
+            </Script> */}
         </>
     )
 }

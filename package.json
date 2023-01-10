@@ -6,10 +6,9 @@
     "start": "next start"
   },
   "dependencies": {
-    "@react-pdf-viewer/core": "^3.8.0",
-    "@react-pdf-viewer/page-navigation": "^3.8.0",
-    "next": "latest",
-    "pdfjs-dist": "^3.0.279",
+    "@react-pdf-viewer/core": "^3.10.0",
+    "@react-pdf-viewer/page-navigation": "^3.10.0",
+    "next": "^13.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
@@ -20,7 +19,7 @@
     "@types/node": "18.11.9",
     "@types/react": "18.0.25",
     "copy-webpack-plugin": "^11.0.0",
-    "typescript": "4.9.3",
-    "vercel": "^28.5.5"
+    "pdfjs-dist": "^3.2.146",
+    "typescript": "4.9.3"
   }
 }
