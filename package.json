@@ -8,6 +8,7 @@
   "dependencies": {
     "@react-pdf-viewer/core": "^3.10.0",
     "@react-pdf-viewer/page-navigation": "^3.10.0",
+    "pdfjs-dist": "^3.2.146",
     "next": "^13.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
