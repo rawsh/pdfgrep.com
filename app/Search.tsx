@@ -59,28 +59,32 @@ export default function Search() {
         }
     }
 
+
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
-
-        // go to next result
         const nextResult = () => {
-            if (currentPdf.resultIndex < results.length - 1) {
-                const [filename, page, ...rest] = results[currentPdf.resultIndex + 1].split(":");
-                const fileData = fileNameToData[filename];
-                setCurrentPdf({
-                    resultIndex: currentPdf.resultIndex + 1,
-                    fileName: filename,
-                    fileData: fileData,
-                    currentPage: parseInt(page)
-                });
-                setShowPdf(true);
-            }
+            setCurrentPdf((currentPdf) => {
+                console.log(currentPdf.resultIndex)
+                console.log(results)
+                if (currentPdf.resultIndex < results.length - 1) {
+                    const [filename, page, ...rest] = results[currentPdf.resultIndex + 1].split(":");
+                    const fileData = fileNameToData[filename];
+                    return {
+                        resultIndex: currentPdf.resultIndex + 1,
+                        fileName: filename,
+                        fileData: fileData,
+                        currentPage: parseInt(page)
+                    }
+                }
+                return currentPdf;
+            });
+
         }
 
         const spacebarListener = (e: KeyboardEvent) => {
             if (e.key === " ") {
-                console.log(e.key)
                 e.preventDefault();
+                console.log(e.key)
                 nextResult();
             }
         }
@@ -104,6 +108,13 @@ export default function Search() {
             }
         });
 
+        return () => {
+            // remove event listener
+            window.removeEventListener("keydown", spacebarListener);
+        }
+    }, [results]);
+
+    useEffect(() => {
         if (workerRef.current == null) {
             // set worker
             workerRef.current = new Worker('/dist/pdfgrep_worker.js');
@@ -139,12 +150,6 @@ export default function Search() {
             };
             workerRef.current.postMessage({ pdfgrep_wasm: "/dist/pdfgrep.wasm", pdfgrep_js: "/dist/pdfgrep.js" });
         }
-
-        return () => {
-            // remove event listener
-            window.removeEventListener("keydown", spacebarListener);
-        }
-
     }, []);
 
     // disable the search if loading

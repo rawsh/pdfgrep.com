@@ -3,8 +3,10 @@ export default function Head() {
         <>
             <title>pdfgrep</title>
             <meta name="description" content="pdf search powered by pdfgrep compiled to webassembly" />
-            <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width" />
+
+            <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+            <link rel="icon" type="image/png" href="/favicon.png" />
 
             {/* Preload scripts */}
             <link rel="pdfgrep" type="text/javascript" id="pdfgrep_worker_js" href="/dist/pdfgrep_worker.js" /> 
