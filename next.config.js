@@ -25,20 +25,13 @@ const nextConfig = {
               'from': path.join(__dirname, './node_modules/pdfjs-dist/build/pdf.worker.js'),
               'to': path.join(__dirname, './public/dist/pdf.worker.js'),
             },
+            {
+              'from': path.join(__dirname, './node_modules/pdfjs-dist/build/pdf.worker.js.map'),
+              'to': path.join(__dirname, './public/dist/pdf.worker.js.map'),
+            }
           ],
         })
       )
-
-      // config.plugins.push(
-      //   new webpack.NormalModuleReplacementPlugin(
-      //     /^pdfjs-dist$/,
-      //     resource => {
-      //       resource.request = path.join(__dirname, './node_modules/pdfjs-dist/webpack')
-      //     }
-      //   )
-      // )
-        
-      // config.entry['pdf.worker'] = path.join(__dirname, './node_modules/pdfjs-dist/build/pdf.worker.js')
     }
     return config
   },

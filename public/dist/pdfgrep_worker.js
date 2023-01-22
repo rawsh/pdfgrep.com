@@ -5,7 +5,14 @@ self.pipeline = null
 onmessage = async ({ data: { getFileData, files, query, pdfgrep_wasm, pdfgrep_js } }) => {
     if (pdfgrep_wasm && pdfgrep_js) {
         try {
-            self.pipeline = new PDFPipeline(pdfgrep_wasm, pdfgrep_js, msg=>postMessage({print: msg}), _ => postMessage({ print: "initialized" }), PDFPipeline.ScriptLoaderWorker);
+            // _ => postMessage({ print: "initialized" }),
+            self.pipeline = new PDFPipeline(
+                pdfgrep_wasm, 
+                pdfgrep_js, 
+                msg => postMessage({print: msg}), 
+                _ => console.log("initialized"),
+                PDFPipeline.ScriptLoaderWorker
+            );
         } catch (err) {
             postMessage({exception: 'Exception during initialization: ' + err.toString() + '\nStack:\n' + err.stack});
         }

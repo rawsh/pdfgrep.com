@@ -9,8 +9,6 @@ import { PDFViewer, NavigationHandle } from './PDFViewer'
 // styles 
 import styles from '../styles/Home.module.css'
 
-// listen for a keypress arrow right
-
 type FileWithPageData = {
     resultIndex: number;
     fileName: string;
@@ -62,35 +60,34 @@ export default function Search() {
 
     // Set localStorage item when the component mounts and add storage event listener
     useEffect(() => {
-        const nextResult = () => {
-            setCurrentPdf((currentPdf) => {
-                console.log(currentPdf.resultIndex)
-                console.log(results)
-                if (currentPdf.resultIndex < results.length - 1) {
-                    const [filename, page, ...rest] = results[currentPdf.resultIndex + 1].split(":");
-                    const fileData = fileNameToData[filename];
-                    return {
-                        resultIndex: currentPdf.resultIndex + 1,
-                        fileName: filename,
-                        fileData: fileData,
-                        currentPage: parseInt(page)
-                    }
-                }
-                return currentPdf;
-            });
+        // const nextResult = () => {
+        //     setCurrentPdf((currentPdf) => {
+        //         console.log(currentPdf.resultIndex)
+        //         console.log(results)
+        //         if (currentPdf.resultIndex < results.length - 1) {
+        //             const [filename, page, ...rest] = results[currentPdf.resultIndex + 1].split(":");
+        //             const fileData = fileNameToData[filename];
+        //             return {
+        //                 resultIndex: currentPdf.resultIndex + 1,
+        //                 fileName: filename,
+        //                 fileData: fileData,
+        //                 currentPage: parseInt(page)
+        //             }
+        //         }
+        //         return currentPdf;
+        //     });
+        // }
 
-        }
-
-        const spacebarListener = (e: KeyboardEvent) => {
-            if (e.key === " ") {
-                e.preventDefault();
-                console.log(e.key)
-                nextResult();
-            }
-        }
+        // const spacebarListener = (e: KeyboardEvent) => {
+        //     if (e.key === " ") {
+        //         e.preventDefault();
+        //         console.log(e.key)
+        //         nextResult();
+        //     }
+        // }
 
         // attach event listener
-        window.addEventListener("keydown", spacebarListener);
+        // window.addEventListener("keydown", spacebarListener);
 
         // if screen width is larger than 1200, expand pdf viewer
         if (window.innerWidth > 1200) {
@@ -108,11 +105,11 @@ export default function Search() {
             }
         });
 
-        return () => {
-            // remove event listener
-            window.removeEventListener("keydown", spacebarListener);
-        }
-    }, [results]);
+        // return () => {
+        //     // remove event listener
+        //     window.removeEventListener("keydown", spacebarListener);
+        // }
+    }, []);
 
     useEffect(() => {
         if (workerRef.current == null) {
@@ -212,7 +209,7 @@ export default function Search() {
                             type="text" 
                             placeholder="search term (regex supported)"
                             onChange={(e) => setSearch(e.target.value)}
-                            onKeyPress={(e) => {
+                            onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                                 pdfgrep();
@@ -256,7 +253,9 @@ export default function Search() {
                                 });
                             }
                         }}>
-                            {result}
+                            <div className={styles.resultFilename}>{filename}</div>
+                            <div className={styles.resultPage}>{page}</div>
+                            <div className={styles.resultText}>{rest.join(":")}</div>
                         </div>
                     )}
                 )}
