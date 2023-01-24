@@ -8,6 +8,7 @@ import { PDFViewer, NavigationHandle } from './PDFViewer'
 
 // styles 
 import styles from '../styles/Home.module.css'
+import ResTable from '../components/ResTable';
 
 type FileWithPageData = {
     resultIndex: number;
@@ -220,10 +221,43 @@ export default function Search() {
                 </form>
             </header>
 
+            {/* <pre className={styles.code}></pre> */}
 
-            {/* results */}
-            <div className={styles.results}>
-                {/* monospace */}
+            <ResTable currentRow={currentPdf.resultIndex} data={
+                results.map((res, _) => {
+                    const [filename, page, ...rest] = res.split(":");
+                    const text = rest.join(":");
+
+                    return {
+                        filename: filename,
+                        page: parseInt(page),
+                        text: text
+                    }
+                })
+            } onRowClick={(filename: string, page: number, index: number) => {
+                if (!showPdf) {
+                    setShowPdf(true);
+                }
+                if (filename === currentPdf.fileName) {
+                    navigationRef.current?.jumpToPage(page - 1);
+                    setCurrentPdf(currentPdf => {
+                        return {
+                            ...currentPdf,
+                            resultIndex: index,
+                            currentPage: page - 1
+                        }
+                    });
+                } else if (fileNameToData[filename]) {
+                    setCurrentPdf({
+                        resultIndex: index,
+                        fileName: filename,
+                        fileData: fileNameToData[filename],
+                        currentPage: page - 1
+                    });
+                }
+            }}/>
+
+            {/* <div className={styles.results}>
                 <pre className={styles.code}>
                 {results.map((result, index) => {
                     // parse result to get filename and slide number
@@ -260,7 +294,7 @@ export default function Search() {
                     )}
                 )}
                 </pre>
-            </div>
+            </div> */}
 
             <div className={[styles.controlButton, styles.minimizeButton].join(" ")} onClick={() => {
                 if(expanded) { 
