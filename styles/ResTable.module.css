@@ -1,10 +1,13 @@
+.tableWrapper {
+    flex: 1;
+    max-height: calc(100% - 449px);
+}
 
 .results {
-    flex: 1;
     /* background: #fafafa; */
     width: 100%;
-    overflow-x: auto;
-    overflow-y: auto;
+    display: table;
+    table-layout: fixed;
 }
 
 .result {
@@ -19,7 +22,8 @@
 }
 
 .filename {
-    max-width: 250px;
+    padding: 5px 10px;
+    width: 160px;
     display: table-cell;
     overflow: hidden;
     white-space: nowrap;
@@ -27,10 +31,12 @@
 }
 
 .page {
+    padding: 5px;
     width: 25px;
     display: table-cell;
 }
 
 .text {
+    padding: 5px 10px;
     display: table-cell;
 }
